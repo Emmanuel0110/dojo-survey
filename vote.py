@@ -25,27 +25,27 @@ sched.add_job(clean_outdated_surveys,'interval',seconds=10)
 sched.start()
 
 @app.get("/")
-@app.get("/vote")
-@app.get("/result")
-@app.get("/numberoptions")
 def render_index():
-    # returns index; or if surveyId is passed in the url, returns the number of options (saved in memory when the survey was created)
+    # returns index;
+    return render_template('index.html')
+
+@app.get("/api/numberoptions")
+def number_of_options():
+    #if surveyId is passed in the url, returns the number of options (saved in memory when the survey was created)
     if request.args.get('surveyId'):
         survey_id = request.args.get('surveyId')
         if memory.get(survey_id):
             return {"numberOptions": memory[survey_id]['numberOptions']}
         return '<h1>Wrong surveyId</h1>'
-    return render_template('index.html')
-
-
+    
 @app.errorhandler(404)
 def not_found(error):
     # manages 404 errors
     return render_template('error.html'), 404
 
 
-@app.post('/generate-qr-code')
-def number_of_options():
+@app.post('/api/generate-qr-code')
+def survey_id():
     # collects number of voting options and creates the survey object, with keys for numberOptions and created_date
     if request.json.get('numberOptions'):
         numberOptions = request.json.get('numberOptions')  
@@ -58,7 +58,7 @@ def number_of_options():
         return survey_id
     return '<h1>Number of options not given</h1>'
 
-@app.post('/vote')
+@app.post('/api/vote')
 def collect_votes():
     # collects json object {surveyId:int, votes:int}
     if request.json.get('surveyId'):
@@ -77,7 +77,7 @@ def collect_votes():
         return '<h1>Wrong surveyId or survey expired</h1>'
     return '<h1>Missing surveyId</h1>'
         
-@app.get('/results')
+@app.get('/api/results')
 def return_votes():
     #returns json object {numberVotes:int,votes:int}
     if request.args.get('surveyId'):
@@ -92,6 +92,6 @@ if __name__ == "__main__":
     app.run()
 
     
-with app.test_request_context('/generate-qr-code', method='POST'):
-    assert request.path == '/generate-qr-code'
+with app.test_request_context('/api/generate-qr-code', method='POST'):
+    assert request.path == '/api/generate-qr-code'
     assert request.method == 'POST'
